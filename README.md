@@ -1,58 +1,82 @@
-# Code_reviewer_v1
-Trying to create an integrated AI agent that will perform code review for every commit
+# Code Reviewer 🐙
 
-## Automated AI Code Reviewer
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9%2B-blue" />
+  <img src="https://img.shields.io/badge/License-MIT-green" />
+  <img src="https://img.shields.io/badge/CI-Pytest%20passing-brightgreen" />
+</p>
 
-This repository integrates an **AI-powered code review** that runs automatically after every commit and produces detailed feedback using OpenAI's `o3` model.
+> **Automated AI-powered reviews for every commit.**  
+> Powered by OpenAI's `o3-mini` model, delivered instantly in your terminal.
 
-### Quick start
+---
 
-1.  Install dependencies (ideally inside a virtualenv):
+## ✨ Features
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+• **Zero-click reviews** – a Git *post-commit* hook captures each change and feeds it to the model.  
+• **Full-context analysis** – sends the diff *and* a snapshot of the repo (truncated to a safe size).  
+• **Actionable feedback** – flags bugs, smells, docs gaps, perf/security issues with line references.  
+• **Model-agnostic** – default is `o3-mini`; override via `MODEL` env var.  
+• **Friendly setup** – just add your `OPENAI_API_KEY` to a `.env` and commit as usual.  
+• **Tested** – critical helper functions covered by `pytest`.
 
-2.  Export your OpenAI credentials:
+---
 
-    ```bash
-    export OPENAI_API_KEY="sk-..."  # replace with your key
-    ```
+## 🚀 Quick Start
 
-3.  Activate the version-controlled Git hooks:
+```bash
+# 1) Install dependencies (virtualenv/pyenv recommended)
+pip install -r requirements.txt
 
-    ```bash
-    # Tell Git to use hooks from the .githooks/ directory
-    git config core.hooksPath .githooks
-    # Make sure the hook has execute permissions (once)
-    chmod +x .githooks/post-commit
-    ```
+# 2) Provide your OpenAI credentials – *never* commit real keys!
+cp .env.example .env           # then edit .env and add your key
 
-From now on, **every commit** will trigger a post-commit hook that
+# 3) Activate repo-local Git hooks (one-time)
+./scripts/install_hooks.sh
 
-* Collects the diff of the commit plus a snapshot (up to `MAX_CONTEXT_CHARS`) of the repository.
-* Sends this information to the OpenAI API with the `o3` model.
-* Prints an actionable, line-referenced review to your terminal.
+# Done!  Make a commit and watch the ✨ appear.
+```
 
-### Configuration
+---
 
-Environment variables:
+## ⚙️ Configuration
 
-* `OPENAI_API_KEY` – **required**. Your OpenAI API key. (You can also put this in a local `.env` file.)
-* `MODEL` – Model name to use (default: `o3-mini`).
-* `MAX_CONTEXT_CHARS` – Maximum characters of repository context to send (default: `100000`).
+Environment variable | Purpose | Default
+--- | --- | ---
+`OPENAI_API_KEY` | Your OpenAI key **(required)** | –
+`MODEL` | Which model to use | `o3-mini`
+`MAX_CONTEXT_CHARS` | Max characters of repo context to send | `100000`
 
-You can also invoke the reviewer manually:
+All variables can live in your `.env` file (git-ignored).
+
+---
+
+## 🖐 Manual Invocation
+
+Want to trigger a review outside the hook (e.g. in CI)?
 
 ```bash
 python scripts/ai_code_reviewer.py --commit <hash> [--no-context]
 ```
 
-You can create a `.env` (git-ignored) or commit a `.env.example` placeholder for others:
+---
 
-```ini
-# .env.example
-OPENAI_API_KEY=
-MODEL=o3-mini
-#MAX_CONTEXT_CHARS=100000
+## 🧪 Running Tests
+
+```bash
+pytest -q      # runs 3 fast unit tests
 ```
+
+---
+
+## 🔒 Security Notes
+
+• `.env` is already in `.gitignore`; keep secrets out of Git.  
+• Sample credentials live in `.env.example` for convenience.  
+• The reviewer prints results to stdout; it never writes remote logs.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License – see [LICENSE](LICENSE) for details.
