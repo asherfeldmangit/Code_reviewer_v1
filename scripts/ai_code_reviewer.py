@@ -19,6 +19,7 @@ You can also pass --no-context to omit the repository context if desired.
 
 from __future__ import annotations
 
+# pylint: disable=import-error
 import argparse
 import os
 import subprocess
@@ -27,8 +28,8 @@ import textwrap
 from pathlib import Path
 from typing import List
 
-import openai
 import dotenv
+from openai import OpenAI
 
 # ----------------------------- Helpers ------------------------------------- #
 
@@ -64,10 +65,10 @@ def collect_repo_context(repo_root: Path, max_chars: int) -> str:
 
     for path in sorted(repo_root.rglob("*")):
         if path.is_dir():
+            # Skip excluded directories entirely
             if path.name in EXCLUDE_DIRS:
-                # Skip entire directory
-                dirs_to_skip = [p for p in path.glob("**/*")]
                 continue
+            # No need to process directory objects further
             continue
 
         if path.suffix.lower() in EXCLUDE_EXTENSIONS:
@@ -97,7 +98,9 @@ def get_commit_diff(commit_hash: str) -> str:
     try:
         diff_output = run(["git", "show", "--unified=3", commit_hash])
     except subprocess.CalledProcessError as exc:
-        print(f"Error obtaining diff for commit {commit_hash}: {exc.stderr.decode()}", file=sys.stderr)
+        # exc.stderr may be bytes or str depending on the Python version / platform
+        stderr_msg = exc.stderr.decode() if isinstance(exc.stderr, (bytes, bytearray)) else str(exc.stderr)
+        print(f"Error obtaining diff for commit {commit_hash}: {stderr_msg}", file=sys.stderr)
         sys.exit(1)
     return diff_output
 
@@ -156,8 +159,10 @@ def main() -> None:
         print("Environment variable OPENAI_API_KEY is not set.", file=sys.stderr)
         sys.exit(1)
 
-    openai.api_key = api_key
-    model = os.getenv("MODEL", "o3")
+    model = os.getenv("MODEL", "o3-mini")
+
+    # Initialise OpenAI client (uses env var or explicit key)
+    client = OpenAI(api_key=api_key)
 
     diff = get_commit_diff(args.commit)
 
@@ -170,16 +175,15 @@ def main() -> None:
     messages = build_messages(diff, context)
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.2,
         )
     except Exception as exc:
         print(f"OpenAI API error: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    review = response.choices[0].message["content"].strip()
+    review = response.choices[0].message.content.strip()
     print("\n=== AI CODE REVIEW ===\n")
     print(review)
 

@@ -39,11 +39,20 @@ From now on, **every commit** will trigger a post-commit hook that
 Environment variables:
 
 * `OPENAI_API_KEY` – **required**. Your OpenAI API key. (You can also put this in a local `.env` file.)
-* `MODEL` – Model name to use (default: `o3`).
+* `MODEL` – Model name to use (default: `o3-mini`).
 * `MAX_CONTEXT_CHARS` – Maximum characters of repository context to send (default: `100000`).
 
 You can also invoke the reviewer manually:
 
 ```bash
 python scripts/ai_code_reviewer.py --commit <hash> [--no-context]
+```
+
+You can create a `.env` (git-ignored) or commit a `.env.example` placeholder for others:
+
+```ini
+# .env.example
+OPENAI_API_KEY=
+MODEL=o3-mini
+#MAX_CONTEXT_CHARS=100000
 ```
