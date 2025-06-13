@@ -64,11 +64,13 @@ def collect_repo_context(repo_root: Path, max_chars: int) -> str:
     current_len = 0
 
     for path in sorted(repo_root.rglob("*")):
+        # Skip any file that resides inside an excluded directory (at any
+        # depth) or whose own name matches an excluded directory.
+        if any(part in EXCLUDE_DIRS for part in path.parts):
+            continue
+
         if path.is_dir():
-            # Skip excluded directories entirely
-            if path.name in EXCLUDE_DIRS:
-                continue
-            # No need to process directory objects further
+            # Directory entries themselves are not interesting as context.
             continue
 
         if path.suffix.lower() in EXCLUDE_EXTENSIONS:
@@ -161,7 +163,11 @@ def main() -> None:
 
     model = os.getenv("MODEL", "o3-mini")
 
-    # Initialise OpenAI client (uses env var or explicit key)
+    # Initialise OpenAI client. The v1 library exposes an `OpenAI` class that
+    # encapsulates configuration like the API key. We prefer this over the
+    # module-level globals because it supports multiple concurrent clients in
+    # the same process (e.g. during unit tests) and makes dependency injection
+    # straightforward if we ever mock the client.
     client = OpenAI(api_key=api_key)
 
     diff = get_commit_diff(args.commit)
