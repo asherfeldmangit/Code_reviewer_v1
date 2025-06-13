@@ -38,7 +38,7 @@ From now on, **every commit** will trigger a post-commit hook that
 
 Environment variables:
 
-* `OPENAI_API_KEY` – **required**. Your OpenAI API key.
+* `OPENAI_API_KEY` – **required**. Your OpenAI API key. (You can also put this in a local `.env` file.)
 * `MODEL` – Model name to use (default: `o3`).
 * `MAX_CONTEXT_CHARS` – Maximum characters of repository context to send (default: `100000`).
 

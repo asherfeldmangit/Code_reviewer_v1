@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import List
 
 import openai
+import dotenv
 
 # ----------------------------- Helpers ------------------------------------- #
 
@@ -145,6 +146,10 @@ def main() -> None:
     parser.add_argument("--commit", default="HEAD", help="Commit hash to review (default: HEAD)")
     parser.add_argument("--no-context", action="store_true", help="Skip sending full repo context")
     args = parser.parse_args()
+
+    # Load environment variables from a local .env file (if present) so users
+    # can avoid exporting OPENAI_API_KEY each session.
+    dotenv.load_dotenv()
 
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
