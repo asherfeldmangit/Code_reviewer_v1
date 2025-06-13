@@ -47,6 +47,8 @@ Environment variable | Purpose | Default
 `MODEL` | Which model to use | `o3-mini`
 `MAX_CONTEXT_CHARS` | Max characters of repo context to send | `100000`
 `PROMPT_PATH` | Override system prompt by editing `scripts/prompt.md` | –
+`RUN_TIMEOUT` | Timeout in seconds for git commands (0 to disable) | `10`
+`PROMPT_FILE` | Path to custom system prompt markdown | `scripts/prompt.md`
 
 All variables can live in your `.env` file (git-ignored).
 

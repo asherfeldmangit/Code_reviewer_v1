@@ -64,3 +64,29 @@ def test_get_commit_diff(monkeypatch: pytest.MonkeyPatch):
 
     result = ai_reviewer.get_commit_diff("HEAD")
     assert result == fake_diff 
+
+
+def test_build_messages_fallback(monkeypatch):
+    """If prompt file is missing, fallback system prompt is used."""
+    import scripts.ai_code_reviewer as acr
+
+    # Monkeypatch prompt path exists to False
+    monkeypatch.setattr(acr, "PROMPT_PATH", Path("nonexistent.md"))
+
+    msgs = acr.build_messages("diff", None)
+    assert msgs[0]["role"] == "system"
+    assert "Python" in msgs[0]["content"]  # from fallback prompt
+
+
+def test_run_timeout(monkeypatch):
+    """Ensure run() passes timeout and returns output."""
+    import scripts.ai_code_reviewer as acr
+
+    def fake_subprocess_run(cmd, **kwargs):  # noqa: D401
+        assert kwargs.get("timeout") == acr.RUN_TIMEOUT or acr.RUN_TIMEOUT == 0
+        class Result:
+            stdout = b"ok"
+        return Result()
+
+    monkeypatch.setattr(acr.subprocess, "run", fake_subprocess_run)
+    assert acr.run(["echo", "hi"]) == "ok" 

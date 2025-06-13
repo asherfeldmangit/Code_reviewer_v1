@@ -27,18 +27,42 @@ import sys
 import textwrap
 from pathlib import Path
 from typing import List
+import logging
 
 import dotenv
 from openai import OpenAI
 
-# Path to an optional custom system prompt placed alongside this script.
-PROMPT_PATH = Path(__file__).with_name("prompt.md")
+# --------------------------------------------------------------------------- #
+# Configuration helpers
+
+# Path to an optional custom system prompt. Users can override via the environment
+# variable `PROMPT_FILE`; otherwise we default to `scripts/prompt.md`.
+PROMPT_PATH = Path(os.getenv("PROMPT_FILE", Path(__file__).with_name("prompt.md")))
+
+# Timeout (in seconds) for shell commands executed via `run()`.
+RUN_TIMEOUT = int(os.getenv("RUN_TIMEOUT", "10"))
+
+# Basic debug logger that emits to stderr when DEBUG=1/true is set.
+logging.basicConfig(level=logging.INFO if os.getenv("DEBUG") else logging.WARNING, format="%(message)s")
 
 # ----------------------------- Helpers ------------------------------------- #
 
-def run(cmd: List[str], cwd: Path | None = None) -> str:
-    """Run a shell command and return its stdout decoded as UTF-8."""
-    result = subprocess.run(cmd, cwd=cwd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def run(cmd: List[str], cwd: Path | None = None, *, timeout: int | None = RUN_TIMEOUT) -> str:
+    """Run a shell command and return its stdout decoded as UTF-8.
+
+    A global timeout (via RUN_TIMEOUT env var) prevents hangs when Git is slow or
+    waiting for user input. The timeout can be disabled by setting RUN_TIMEOUT=0.
+    """
+    kwargs = {
+        "cwd": cwd,
+        "check": True,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+    }
+    if timeout and timeout > 0:
+        kwargs["timeout"] = timeout
+
+    result = subprocess.run(cmd, **kwargs)  # type: ignore[arg-type]
     return result.stdout.decode()
 
 
@@ -81,8 +105,8 @@ def collect_repo_context(repo_root: Path, max_chars: int) -> str:
 
         try:
             content = path.read_text(encoding="utf-8")
-        except Exception:
-            # Probably a binary file
+        except Exception as exc:  # noqa: BLE001 – broad catch acceptable here
+            logging.info("[AI Reviewer] Skipped non-text or unreadable file: %s (%s)", path, exc)
             continue
 
         chunk_header = f"\n\n# File: {path.relative_to(repo_root)}\n\n"
