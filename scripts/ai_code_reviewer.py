@@ -31,6 +31,9 @@ from typing import List
 import dotenv
 from openai import OpenAI
 
+# Path to an optional custom system prompt placed alongside this script.
+PROMPT_PATH = Path(__file__).with_name("prompt.md")
+
 # ----------------------------- Helpers ------------------------------------- #
 
 def run(cmd: List[str], cwd: Path | None = None) -> str:
@@ -109,14 +112,17 @@ def get_commit_diff(commit_hash: str) -> str:
 
 def build_messages(diff: str, context: str | None) -> List[dict[str, str]]:
     """Compose chat messages for the OpenAI API call."""
-    system_msg = (
-        "You are an experienced senior software engineer and code reviewer. "
-        "Given a commit diff and the project context, produce a thorough, actionable "
-        "code review. Highlight potential bugs, code smells, documentation gaps, "
-        "performance issues, security concerns, and suggest concrete improvements. "
-        "Reference specific files and line numbers where appropriate. Be concise but "
-        "comprehensive."
-    )
+    # Prefer external prompt file if it exists to make customization easy and
+    # keep the inline default lightweight for token efficiency.
+    if PROMPT_PATH.exists():
+        system_msg = PROMPT_PATH.read_text().strip()
+    else:
+        system_msg = (
+            "You are a senior Python code reviewer. Provide constructive, actionable feedback "
+            "focused on readability, efficiency, security, testing, and maintainability. "
+            "Reference file paths / line numbers from the diff. Respond with a brief summary "
+            "followed by bullet-pointed issues and concrete suggestions. Praise positives too."
+        )
 
     user_content = textwrap.dedent(
         f"""

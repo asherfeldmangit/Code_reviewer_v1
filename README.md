@@ -46,6 +46,7 @@ Environment variable | Purpose | Default
 `OPENAI_API_KEY` | Your OpenAI key **(required)** | –
 `MODEL` | Which model to use | `o3-mini`
 `MAX_CONTEXT_CHARS` | Max characters of repo context to send | `100000`
+`PROMPT_PATH` | Override system prompt by editing `scripts/prompt.md` | –
 
 All variables can live in your `.env` file (git-ignored).
 
