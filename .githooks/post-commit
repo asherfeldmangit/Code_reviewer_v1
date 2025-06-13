@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# post-commit hook that triggers the AI code reviewer.
+# Requires environment variable OPENAI_API_KEY to be set.
+# The hook is executed from the repository root.
+
+# Print info
+printf "\033[0;34m[AI Reviewer]\033[0m Running automated code review...\n"
+
+SCRIPT_PATH="$(git rev-parse --show-toplevel)/scripts/ai_code_reviewer.py"
+if [ ! -f "$SCRIPT_PATH" ]; then
+  echo "AI reviewer script not found at $SCRIPT_PATH" >&2
+  exit 0  # Do not block commit
+fi
+
+python "$SCRIPT_PATH" --commit HEAD || true 
